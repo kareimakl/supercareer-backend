@@ -29,6 +29,9 @@ RUN pip install gunicorn uvicorn
 # Copy the project code into the container
 COPY . /app/
 
+# Collect static files (for Swagger UI, admin, etc.)
+RUN python manage.py collectstatic --noinput --clear || true
+
 # Expose port 8000 for the application
 EXPOSE 8000
 

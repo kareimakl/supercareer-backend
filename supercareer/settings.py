@@ -221,8 +221,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# Email settings for development
-# Email configuration
+# Email settings
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -230,12 +229,9 @@ EMAIL_HOST_USER = 'bilaltarek2005@gmail.com'
 EMAIL_HOST_PASSWORD = 'sznp foio icdk yuey'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# SSL and Backend Fix for Development
-if DEBUG:
-    # Use custom backend that bypasses SSL cert check - sends REAL emails on Windows
-    EMAIL_BACKEND = 'supercareer.email_backend.UnverifiedSSLEmailBackend'
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Use standard Django SMTP backend (works on Linux/Render)
+# The UnverifiedSSLEmailBackend was only needed for Windows development
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 
 

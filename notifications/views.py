@@ -27,14 +27,21 @@ class ForgotPasswordView(APIView):
             # Save OTP to database
             OTPCode.objects.create(email=email, code=otp)
             
-            # Send Email (using console backend in settings)
-            send_mail(
-                'Your Password Reset OTP',
-                f'Your OTP is: {otp}',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
+            # Send Email
+            try:
+                send_mail(
+                    'Your Password Reset OTP',
+                    f'Your OTP is: {otp}',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"SMTP Error for {email}: {str(e)}")
+                return Response({
+                    "error": "Failed to send email. Please check SMTP settings.",
+                    "details": str(e)
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             return Response({"message": "OTP sent successfully to your email."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

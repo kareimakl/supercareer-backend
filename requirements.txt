@@ -1,4 +1,4 @@
-﻿# ًں”¥ Django Core
+# ًں”¥ Django Core
 Django
 djangorestframework
 asgiref
@@ -40,22 +40,22 @@ urllib3
 
 
 
-# ًں”¥ Core AI
-torch
-transformers
-sentence-transformers
+# # ًں”¥ Core AI
+# torch
+# transformers
+# sentence-transformers
 
-# ًں“ٹ ML
-scikit-learn
-scipy
-numpy
+# # ًں“ٹ ML
+# scikit-learn
+# scipy
+# numpy
 
-# ًں“ٹ Data
-pandas
-pyarrow
+# # ًں“ٹ Data
+# pandas
+# pyarrow
 
-# ًں”چ Search / NLP
-faiss-cpu
+# # ًں”چ Search / NLP
+# faiss-cpu
 fuzzywuzzy
 RapidFuzz
 
@@ -63,10 +63,10 @@ RapidFuzz
 openai
 anthropic
 
-# ًں¤— HuggingFace
-huggingface_hub
-tokenizers
-safetensors
+# # ًں¤— HuggingFace
+# huggingface_hub
+# tokenizers
+# safetensors
 
 
 

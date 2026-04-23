@@ -2,7 +2,7 @@ import subprocess
 import os
 import csv
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Job, FreelanceProject
 from accounts.models import Skill
 from .serializers import JobSerializer, ProjectSerializer, RefreshResponseSerializer
@@ -20,12 +20,12 @@ from accounts.models import Skill
 class JobListView(generics.ListAPIView):
     queryset = Job.objects.prefetch_related('required_skills').all()
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 class ProjectListView(generics.ListAPIView):
     queryset = FreelanceProject.objects.prefetch_related('required_skills').all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 
 

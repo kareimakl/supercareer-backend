@@ -11,6 +11,7 @@ class Job(models.Model):
     source_url = models.URLField()
 
     posted_date = models.DateField()
+    required_skills = models.ManyToManyField('accounts.Skill', blank=True)
     scraped_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 
 class JobSerializer(serializers.ModelSerializer):
     match_score = serializers.SerializerMethodField()
+    required_skills = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Job

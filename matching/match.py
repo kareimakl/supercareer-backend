@@ -4,7 +4,7 @@ try:
 except ImportError:
     AI_AVAILABLE = False
 
-from .vector_engine import model
+from .vector_engine import get_model
 
 def match(user_skills: str, job_description: str, min_threshold: float = 0.0) -> float:
     """
@@ -21,8 +21,8 @@ def match(user_skills: str, job_description: str, min_threshold: float = 0.0) ->
         return float(random.randint(60, 95))
 
     # Generate Embeddings
-    embedding1 = model.encode(user_skills, convert_to_tensor=True)
-    embedding2 = model.encode(job_description, convert_to_tensor=True)
+    embedding1 = get_model().encode(user_skills, convert_to_tensor=True)
+    embedding2 = get_model().encode(job_description, convert_to_tensor=True)
 
     # Calculate Cosine Similarity
     cosine_score = util.cos_sim(embedding1, embedding2)

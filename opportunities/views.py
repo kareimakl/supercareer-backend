@@ -18,12 +18,12 @@ from rest_framework import status
 from accounts.models import Skill
 
 class JobListView(generics.ListAPIView):
-    queryset = Job.objects.all()
+    queryset = Job.objects.prefetch_related('required_skills').all()
     serializer_class = JobSerializer
     permission_classes = [IsAuthenticated]
 
 class ProjectListView(generics.ListAPIView):
-    queryset = FreelanceProject.objects.all()
+    queryset = FreelanceProject.objects.prefetch_related('required_skills').all()
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
 

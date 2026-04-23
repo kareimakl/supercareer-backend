@@ -228,9 +228,9 @@ CORS_ALLOW_CREDENTIALS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_TIMEOUT = 5  # added to prevent Gunicorn workers from crashing fully on network blocks
 EMAIL_HOST_USER = 'bilaltarek2005@gmail.com'
 EMAIL_HOST_PASSWORD = 'fppm kixo ayyb skim'
+EMAIL_TIMEOUT = 5  # added to prevent Gunicorn workers from crashing fully on network blocks
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Use standard Django SMTP backend (works on Linux/Render)

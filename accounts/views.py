@@ -203,12 +203,14 @@ class ProfileView(APIView):
     serializer_class = ProfileSerializer
 
     def get(self, request):
-        profile = UserProfile.objects.get(user=request.user)
+        profile = UserProfile.objects.select_related('user')\
+            .prefetch_related('skills', 'experiences', 'education_history')\
+            .get(user=request.user)
         serializer = ProfileSerializer(profile)
         return Response(serializer.data)
 
     def patch(self, request):
-        profile = UserProfile.objects.get(user=request.user)
+        profile = UserProfile.objects.select_related('user').get(user=request.user)
         serializer = ProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()

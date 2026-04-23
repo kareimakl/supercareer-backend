@@ -19,21 +19,30 @@ class MockModel:
         random.seed(hash(text))
         return [random.random() for _ in range(384)]
 
+_model = None
+
 def get_model():
+    global _model
+    if _model is not None:
+        return _model
+
     if not AI_AVAILABLE:
-        return MockModel()
+        _model = MockModel()
+        return _model
     
     if os.path.exists(MODEL_PATH) and os.listdir(MODEL_PATH):
         print("🚀 تم تحميل الموديل من المجلد المحلي بنجاح!")
-        return SentenceTransformer(MODEL_PATH)
+        _model = SentenceTransformer(MODEL_PATH)
     else:
         print("🌐 جاري تحميل الموديل من الإنترنت (لآخر مرة)...")
-        model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-        model.save(MODEL_PATH)
+        _model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+        _model.save(MODEL_PATH)
         print(f"✅ تم حفظ الموديل في {MODEL_PATH}")
-        return model
+    
+    return _model
 
-model = get_model()
+# Remove module-level global load
+# model = get_model() 
 
 def create_hnsw_index(embeddings):
     if not AI_AVAILABLE:

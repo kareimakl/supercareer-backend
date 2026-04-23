@@ -1,7 +1,18 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils.crypto import get_random_string
-from .models import User, UserProfile, Skill
+from .models import User, UserProfile, Skill, WorkExperience, Education
+
+
+class WorkExperienceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkExperience
+        fields = ['id', 'job_title', 'company', 'start_date', 'end_date', 'is_current', 'description']
+
+class EducationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Education
+        fields = ['id', 'school', 'degree', 'graduation_year', 'description']
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -19,7 +30,12 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=False, allow_blank=True)
     role = serializers.CharField(required=False, default='job_seeker')
-    full_name = serializers.CharField(write_only=True, required=False)
+    full_name = serializers.CharField(write_only=True, required=False, allow_blank=True, default='')
+    phone_number = serializers.CharField(write_only=True, required=False, allow_blank=True, default='')
+    professional_title = serializers.CharField(write_only=True, required=False, allow_blank=True, default='')
+    location = serializers.CharField(write_only=True, required=False, allow_blank=True, default='')
+    portfolio_url = serializers.CharField(write_only=True, required=False, allow_blank=True, default='')
+    
     password = serializers.CharField(write_only=True, min_length=8)
     skills = serializers.ListField(child=serializers.CharField(), required=False)
     hourly_rate = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0.00)
@@ -31,13 +47,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'role', 'full_name',
+        fields = ['username', 'email', 'password', 'role', 'full_name', 'phone_number',
+                  'professional_title', 'location', 'portfolio_url',
                   'skills', 'hourly_rate', 'specialization', 
                   'experience', 'bio', 'education', 'preferences']
 
     def create(self, validated_data):
-        # Extract full_name and split it
-        full_name = validated_data.pop('full_name', '')
+        # Extract full_name for splitting into first/last name
+        full_name = validated_data.get('full_name', '')
         if full_name:
             parts = full_name.split(' ', 1)
             validated_data['first_name'] = parts[0] if len(parts) > 0 else ''
@@ -53,16 +70,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not validated_data.get('role'):
             validated_data['role'] = 'job_seeker'
         
-        # Extract profile data
+        # Extract skills data
         skills_data = validated_data.pop('skills', [])
-        profile_fields = ['hourly_rate', 'specialization', 
-                          'experience', 'bio', 'education', 'preferences']
-        profile_data = {field: validated_data.pop(field) for field in profile_fields if field in validated_data}
         
+        # Profile fields to extract from validated_data
+        profile_fields = [
+            'full_name', 'phone_number', 'professional_title', 'location', 
+            'portfolio_url', 'hourly_rate', 'specialization', 'experience', 
+            'bio', 'education', 'preferences'
+        ]
+        
+        # Build profile_data mapping fields to values from validated_data
+        # We use pop() to remove them from the user creation dict
+        profile_data = {}
+        for field in profile_fields:
+            if field in validated_data:
+                profile_data[field] = validated_data.pop(field)
+            else:
+                # Provide a default if it's not present but is in our list
+                # This ensures we don't hit null constraints in the DB
+                profile_data[field] = '' if field != 'hourly_rate' else 0.00
+
         # Create user
         user = User.objects.create_user(**validated_data)
         
-        # Create profile
+        # Create profile with all fields
         profile = UserProfile.objects.create(user=user, **profile_data)
         
         # Handle skills
@@ -79,6 +111,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', required=False)
     username = serializers.CharField(source='user.username', read_only=True)
     
+    experiences = WorkExperienceSerializer(many=True, read_only=True)
+    education_history = EducationSerializer(many=True, read_only=True)
+    
     skills = serializers.ListField(
         child=serializers.CharField(),
         required=False,
@@ -88,8 +123,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['id', 'user', 'first_name', 'last_name', 'email', 'username', 
+                  'full_name', 'phone_number', 'professional_title', 'location', 'portfolio_url',
                   'bio', 'specialization', 'experience', 'hourly_rate', 
-                  'education', 'preferences', 'skills', 'created_at', 'updated_at']
+                  'education', 'preferences', 'skills', 'experiences', 'education_history', 
+                  'created_at', 'updated_at']
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
     def to_representation(self, instance):

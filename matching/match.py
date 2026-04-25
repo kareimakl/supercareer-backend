@@ -28,3 +28,30 @@ def get_ai_match(profile_text, target_text):
     mock_score = float(random.randint(65, 95))
     mock_tips = "Note: AI Server is offline. Using local matching logic."
     return mock_score, ["Skill A", "Skill B"], mock_tips
+
+def generate_ai_proposal(profile_data, project_description):
+    # رابط سيرفر عبد الله الخاص بالبروبوزال (كما في الصورة)
+    URL = "https://unimpartible-glaringly-maudie.ngrok-free.dev/API/proposel"
+    
+    payload = {
+        "profile": profile_data,
+        "project": project_description
+    }
+    
+    try:
+        # بنكلم سيرفر عبدالله بمهلة 5 ثواني
+        response = requests.post(URL, json=payload, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            # بنرجع نص البروبوزال اللي عبدالله باعتة
+            return data.get('generated_proposal', "")
+    except Exception:
+        pass
+    
+    # الـ Fallback في حالة السيرفر قافل
+    fallback_text = (
+        f"Hi, I'm very interested in your project: '{project_description[:40]}...'. "
+        "Based on my profile and skills, I believe I can deliver high-quality results. "
+        "Looking forward to discussing more details with you."
+    )
+    return fallback_text

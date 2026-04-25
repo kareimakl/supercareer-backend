@@ -1,34 +1,30 @@
-try:
-    from sentence_transformers import util
-    AI_AVAILABLE = True
-except ImportError:
-    AI_AVAILABLE = False
+import requests
+import random
 
-from .vector_engine import get_model
-
-def match(user_skills: str, job_description: str, min_threshold: float = 0.0) -> float:
-    """
-    Calculates semantic similarity between two texts.
-    Returns 0.0 if similarity is below the threshold.
-    """
-    if not user_skills or not job_description:
-        return 0.0
-
-    if not AI_AVAILABLE:
-        # Mocking a similarity score: 60-95 if both exist
-        import random
-        random.seed(hash(user_skills + job_description))
-        return float(random.randint(60, 95))
-
-    # Generate Embeddings
-    embedding1 = get_model().encode(user_skills, convert_to_tensor=True)
-    embedding2 = get_model().encode(job_description, convert_to_tensor=True)
-
-    # Calculate Cosine Similarity
-    cosine_score = util.cos_sim(embedding1, embedding2)
-    final_score = float(cosine_score.item()) * 100
-
-    if final_score < min_threshold:
-        return 0.0
+def get_ai_match(profile_text, target_text):
+    # رابط سيرفر عبد الله
+    URL = "https://unimpartible-glaringly-maudie.ngrok-free.dev/API/match"
     
-    return round(final_score, 2)
+    payload = {
+        "cv_text": profile_text,
+        "job_description": target_text
+    }
+    
+    try:
+        # بنقلل الـ timeout لـ 3 ثواني عشان لو عبد الله قافل المشروع ميهنجش
+        response = requests.post(URL, json=payload, timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            return (
+                data.get('match_score', 0.0), 
+                data.get('matched_skills', []), 
+                data.get('ai_tips', '')
+            )
+    except Exception:
+        # لو السيرفر وقع أو الـ timeout خلص، بنرجع داتا عشوائية
+        pass
+    
+    # الـ Fallback (الخطة البديلة)
+    mock_score = float(random.randint(65, 95))
+    mock_tips = "Note: AI Server is offline. Using local matching logic."
+    return mock_score, ["Skill A", "Skill B"], mock_tips

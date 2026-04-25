@@ -1,95 +1,133 @@
-# ًں”¥ Django Core
-Django
-djangorestframework
-asgiref
-sqlparse
-
-# ًں—„ï¸ڈ Database
-psycopg2-binary
-dj-database-url
-
-# âڑ™ï¸ڈ Environment
-python-dotenv
-django-environ
-
-# ًںŒگ API
-django-filter
-django-cors-headers
-
-# ًں“ڑ Docs
-drf-spectacular
-drf-spectacular-sidecar
-
-# ًں”گ Auth & Security
-djangorestframework_simplejwt
-PyJWT
-cryptography
-
-# ًں”گ Google Auth
-google-auth
-google-api-python-client
-
-# ًںڑ€ Production
-gunicorn
-whitenoise
-
-# ًںŒچ HTTP
-requests
-urllib3
-
-
-
-
-# # ًں”¥ Core AI
-# torch
-# transformers
-# sentence-transformers
-
-# # ًں“ٹ ML
-# scikit-learn
-# scipy
-# numpy
-
-# # ًں“ٹ Data
-# pandas
-# pyarrow
-
-# # ًں”چ Search / NLP
-# faiss-cpu
-fuzzywuzzy
-RapidFuzz
-
-# ًں¤– APIs
-openai
-anthropic
-
-# # ًں¤— HuggingFace
-# huggingface_hub
-# tokenizers
-# safetensors
-
-
-
-# ًں§ھ Debug & Tools
-django-extensions
-autopep8
-rich
-
-# ًں§ھ Testing / Utils
-pytest
-tqdm
-
-# ًں§ھ Git
-GitPython
-
-# ًںŒگ Dev servers
-uvicorn
-
-# ًں–¥ï¸ڈ Optional UI / Testing
-#streamlit
-
-# ًں¤– Scraping (ظ„ظˆ ظ…ط­طھط§ط¬)
-selenium
-beautifulsoup4
-lxml
-webdriver-manager
+annotated-types==0.7.0
+anthropic==0.85.0
+anyio==4.12.1
+asgiref==3.11.1
+attrs==25.4.0
+autopep8==1.6.0
+beautifulsoup4==4.12.3
+blinker==1.9.0
+certifi==2026.2.25
+cffi==2.0.0
+charset-normalizer==3.3.2
+click==8.3.1
+colorama==0.4.6
+cryptography==46.0.4
+distlib==0.4.0
+distro==1.9.0
+dj-database-url==1.0.0
+Django==6.0.2
+django-cors-headers==4.9.0
+django-dotenv==1.4.2
+django-environ==0.13.0
+django-extensions==4.1
+django-filter==25.2
+django-jazzmin==3.0.3
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+docopt==0.6.2
+docstring_parser==0.17.0
+drf-spectacular==0.29.0
+drf-spectacular-sidecar==2026.3.1
+drf-yasg==1.21.14
+experta==1.9.4
+filelock==3.20.0
+Flask==3.1.2
+# frozendict==2.3.8
+frozendict==1.2
+fuzzywuzzy==0.18.0
+google-ai-generativelanguage==0.6.15
+google-api-core==2.29.0
+google-api-python-client==2.189.0
+google-auth==2.49.0.dev0
+google-auth-httplib2==0.3.0
+google-genai==1.62.0
+google-generativeai==0.8.6
+googleapis-common-protos==1.72.0
+grpcio==1.78.0
+grpcio-status==1.71.2
+gunicorn==25.1.0
+h11==0.16.0
+httpcore==1.0.9
+httplib2==0.31.2
+httpx==0.28.1
+idna==3.7
+inflection==0.5.1
+itsdangerous==2.2.0
+Jinja2==3.1.6
+jiter==0.13.0
+Js2Py==0.74
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+Levenshtein==0.27.3
+lxml==6.0.2
+MarkupSafe==3.0.3
+MouseInfo==0.1.3
+numpy==2.2.5
+openai==2.29.0
+outcome==1.3.0.post0
+packaging==24.1
+pillow==12.0.0
+pipwin==0.5.2
+platformdirs==4.5.0
+proto-plus==1.27.1
+protobuf==5.29.6
+psycopg2-binary==2.9.11
+pyasn1==0.6.2
+pyasn1_modules==0.4.2
+PyAutoGUI==0.9.54
+pycodestyle==2.8.0
+pycparser==3.0
+pydantic==2.12.5
+pydantic_core==2.41.5
+pygame==2.6.1
+PyGetWindow==0.0.9
+pyjsparser==2.7.1
+PyJWT==2.11.0
+PyMsgBox==1.0.9
+pyparsing==3.3.2
+pyperclip==1.9.0
+PyPrind==2.11.3
+PyRect==0.2.0
+PyScreeze==0.1.30
+pySmartDL==1.3.4
+PySocks==1.7.1
+python-dotenv==1.2.1
+python-Levenshtein==0.27.3
+pytweening==1.2.0
+pytz==2021.3
+pywebio==1.8.3
+PyYAML==6.0.3
+RapidFuzz==3.14.3
+referencing==0.37.0
+requests==2.32.3
+rpds-py==0.30.0
+schema==0.6.7
+selenium==4.41.0
+setuptools==75.8.2
+six==1.16.0
+sniffio==1.3.1
+sortedcontainers==2.4.0
+soupsieve==2.5
+sqlparse==0.5.5
+tenacity==9.1.4
+tk==0.1.0
+toml==0.10.2
+tornado==6.4.1
+tqdm==4.67.3
+trio==0.33.0
+trio-websocket==0.12.2
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+tzdata==2025.3
+tzlocal==5.2
+ua-parser==0.18.0
+uritemplate==4.2.0
+urllib3==2.6.3
+user-agents==2.2.0
+virtualenv==20.35.4
+webdriver-manager==4.0.2
+websocket-client==1.9.0
+websockets==15.0.1
+Werkzeug==3.1.4
+whitenoise==6.12.0
+wsproto==1.3.2

@@ -42,9 +42,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from .models import MatchResult
 from .serializers import MatchResultSerializer
-from .match import get_ai_match, generate_ai_proposal # تأكد من استيراد الدالة الجديدة
+from .match import get_ai_match, generate_ai_proposal
 from opportunities.models import Job, FreelanceProject
 
 # 1. API خاص بمطابقة الوظائف
@@ -91,10 +94,37 @@ class ProjectMatchView(APIView):
         matches = MatchResult.objects.filter(user=user, project__isnull=False).order_by('-match_score', '-project__posted_date')
         return Response(MatchResultSerializer(matches, many=True, context={'request': request}).data)
 
-# 3. الـ API الجديد لتوليد البروبوزال (تم نقله خارج الكلاس السابق وتصحيح المسافات)
+
+# 3. الـ API الجديد لتوليد البروبوزال مع تظبيط السواجر النهائي
 class ProposalGeneratorView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_id="generate_proposal",
+        operation_description="توليد بروبوزال احترافي لمشروع معين باستخدام الذكاء الاصطناعي",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['project_id'],
+            properties={
+                'project_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='رقم المشروع المراد التقديم عليه')
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                description="Success",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'project_title': openapi.Schema(type=openapi.TYPE_STRING),
+                        'ai_generated_proposal': openapi.Schema(type=openapi.TYPE_STRING),
+                    }
+                )
+            ),
+            400: "Bad Request",
+            404: "Project Not Found"
+        }
+    )
     def post(self, request):
         user = request.user
         project_id = request.data.get('project_id')
@@ -103,13 +133,14 @@ class ProposalGeneratorView(APIView):
             return Response({"error": "project_id is required"}, status=400)
 
         try:
+            # جلب بيانات المشروع
             project = FreelanceProject.objects.get(id=project_id)
             
             # تجهيز بيانات البروفايل
             skills = ", ".join([s.name for s in user.profile.skills.all()])
             profile_info = f"Name: {user.get_full_name()}, Skills: {skills}, Bio: {user.profile.bio}"
             
-            # استدعاء الدالة من ملف match.py
+            # استدعاء الدالة لتوليد البروبوزال
             proposal_text = generate_ai_proposal(profile_info, project.description)
             
             return Response({

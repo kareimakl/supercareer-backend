@@ -1,68 +1,82 @@
-from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import MatchResult
 from .serializers import MatchResultSerializer
-
-from .match import match
+from .match import get_ai_match, generate_ai_proposal
 from opportunities.models import Job, FreelanceProject
 
-class MatchListView(generics.ListAPIView):
-    serializer_class = MatchResultSerializer
+# 1. API خاص بمطابقة الوظائف فقط
+class JobMatchView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        try:
-            user = self.request.user
-            queryset = MatchResult.objects.filter(user=user)
-            
-            # Trigger a refresh of scores for the first few items for demo purposes
-            # Check if user.profile exists
-            if not hasattr(user, 'profile'):
-                return MatchResult.objects.none()
+    def get(self, request):
+        user = request.user
+        if not hasattr(user, 'profile'):
+            return Response({"error": "No profile found"}, status=400)
+        
+        profile_str = f"Skills: {[s.name for s in user.profile.skills.all()]}. Bio: {user.profile.bio}"
+        
+        # التعديل هنا: بنجيب أحدث 10 وظائف بناءً على تاريخ النشر
+        jobs = Job.objects.all().order_by('-posted_date')[:10] 
+        for job in jobs:
+            score, matched, tips = get_ai_match(profile_str, f"{job.title} {job.description}")
+            MatchResult.objects.update_or_create(
+                user=user, job=job,
+                defaults={"match_score": score, "matched_skills": matched, "ai_tips": tips}
+            )
+        
+        # بنعرض لليوزر الأعلى سكور الأول، ولو السكور متساوي بنجيب الأحدث
+        matches = MatchResult.objects.filter(user=user, job__isnull=False).order_by('-match_score', '-job__posted_date')
+        return Response(MatchResultSerializer(matches, many=True, context={'request': request}).data)
 
-            profile_str = f"Bio: {user.profile.bio or ''}, Skills: {', '.join([s.name for s in user.profile.skills.all()])}"
-            # Match against jobs
-            for job in Job.objects.all()[:50]:
-                try:
-                    project_str = f"Title: {job.title}, Description: {job.description}"
-                    score = match(profile_str, project_str)
-                    MatchResult.objects.update_or_create(
-                        user=user,
-                        job=job,
-                        defaults={
-                            "match_score": score,
-                            "matched_skills": [],
-                            "missing_skills": [],
-                            "ai_tips": ""
-                        }
-                    )
-                except Exception as e:
-                    print(f"Error matching job {job.id}: {e}")
-                    continue
+# 2. API خاص بمطابقة المشاريع (Freelance) فقط
+class ProjectMatchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not hasattr(user, 'profile'):
+            return Response({"error": "No profile found"}, status=400)
+        
+        profile_str = f"Skills: {[s.name for s in user.profile.skills.all()]}. Bio: {user.profile.bio}"
+        
+        # بنجيب أحدث 10 مشاريع
+        projects = FreelanceProject.objects.all().order_by('-posted_date')[:10]
+        for project in projects:
+            score, matched, tips = get_ai_match(profile_str, f"{project.title} {project.description}")
+            MatchResult.objects.update_or_create(
+                user=user, project=project,
+                defaults={"match_score": score, "matched_skills": matched, "ai_tips": tips}
+            )
+        
+        matches = MatchResult.objects.filter(user=user, project__isnull=False).order_by('-match_score', '-project__posted_date')
+        return Response(MatchResultSerializer(matches, many=True, context={'request': request}).data)
+
+# 3. API لتوليد مقترح (Proposal)
+class ProposalGeneratorView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        project_id = request.data.get('project_id')
+        
+        if not project_id:
+            return Response({"error": "project_id is required"}, status=400)
             
-            # Match against projects
-            for project in FreelanceProject.objects.all()[:50]:
-                try:
-                    project_str = f"Title: {project.title}, Description: {project.description}"
-                    score = match(profile_str, project_str)
-                    MatchResult.objects.update_or_create(
-                        user=user,
-                        project=project,
-                        defaults={
-                            "match_score": score,
-                            "matched_skills": [],
-                            "missing_skills": [],
-                            "ai_tips": ""
-                        }
-                    )
-                except Exception as e:
-                    print(f"Error matching project {project.id}: {e}")
-                    continue
-            queryset = MatchResult.objects.filter(user=user)
-            return queryset.order_by('-match_score')
-        except Exception as e:
-            import traceback
-            print(f"MatchListView Error: {str(e)}")
-            print(traceback.format_exc())
-            # For debugging, we can raise it or return empty
-            raise e
+        try:
+            project = FreelanceProject.objects.get(id=project_id)
+        except FreelanceProject.DoesNotExist:
+            return Response({"error": "Project not found"}, status=404)
+            
+        if not hasattr(user, 'profile'):
+            return Response({"error": "No profile found"}, status=400)
+            
+        profile_data = {
+            "skills": [s.name for s in user.profile.skills.all()],
+            "bio": user.profile.bio,
+            "full_name": user.profile.full_name
+        }
+        
+        proposal_text = generate_ai_proposal(profile_data, project.description)
+        return Response({"proposal": proposal_text})

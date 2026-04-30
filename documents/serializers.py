@@ -34,6 +34,7 @@ class CVSerializer(serializers.ModelSerializer):
     experiences = CVExperienceSerializer(many=True, read_only=True)
     education_history = CVEducationSerializer(many=True, read_only=True)
     skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    
 
     class Meta:
         model = CV

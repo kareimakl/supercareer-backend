@@ -17,8 +17,8 @@ class JobMatchView(APIView):
         
         profile_str = f"Skills: {[s.name for s in user.profile.skills.all()]}. Bio: {user.profile.bio}"
         
-        # التعديل هنا: بنجيب أحدث 10 وظائف بناءً على تاريخ النشر
-        jobs = Job.objects.all().order_by('-posted_date')[:10] 
+        # التعديل هنا: بنجيب أحدث 50 وظائف بناءً على تاريخ النشر
+        jobs = Job.objects.all().order_by('-posted_date')[:50] 
         for job in jobs:
             score, matched, tips = get_ai_match(profile_str, f"{job.title} {job.description}")
             MatchResult.objects.update_or_create(
@@ -41,8 +41,8 @@ class ProjectMatchView(APIView):
         
         profile_str = f"Skills: {[s.name for s in user.profile.skills.all()]}. Bio: {user.profile.bio}"
         
-        # بنجيب أحدث 10 مشاريع
-        projects = FreelanceProject.objects.all().order_by('-posted_date')[:10]
+        # بنجيب أحدث 50 مشروع
+        projects = FreelanceProject.objects.all().order_by('-posted_date')[:50]
         for project in projects:
             score, matched, tips = get_ai_match(profile_str, f"{project.title} {project.description}")
             MatchResult.objects.update_or_create(

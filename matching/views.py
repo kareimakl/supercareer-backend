@@ -23,6 +23,10 @@ class JobMatchView(APIView):
             # بنجيب أحدث 50 وظيفة
             jobs = Job.objects.all().order_by('-posted_date')[:50] 
             
+            # تحسين: بنشوف إيه اللي لسه متماتش مع اليوزر ده عشان منطلبش الـ AI مرتين
+            existing_match_job_ids = MatchResult.objects.filter(user=user, job__isnull=False).values_list('job_id', flat=True)
+            jobs_to_process = [job for job in jobs if job.id not in existing_match_job_ids]
+
             def process_job(job):
                 try:
                     score, matched, tips = get_ai_match(profile_str, f"{job.title} {job.description}")
@@ -33,16 +37,13 @@ class JobMatchView(APIView):
                 except Exception:
                     pass
                 finally:
-                    # مهم جداً في Django عند استخدام الـ Threads
-                    # نقفل الكونكشن الخاص بكل thread عشان ميحصلش تعليق في قاعدة البيانات
                     connection.close()
 
-            # تنفيذ الطلبات بالتوازي (10 في المرة الواحدة)
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                # بنستخدم list() عشان نجبر الكود ينتظر تنفيذ كل الـ threads قبل ما يكمل
-                list(executor.map(process_job, jobs))
+            # تقليل عدد الـ workers لـ 5 عشان الذاكرة في Render Free
+            if jobs_to_process:
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    list(executor.map(process_job, jobs_to_process))
             
-            # بنعرض لليوزر الأعلى سكور الأول، ولو السكور متساوي بنجيب الأحدث
             matches = MatchResult.objects.filter(user=user, job__isnull=False).order_by('-match_score', '-job__posted_date')
             return Response(MatchResultSerializer(matches, many=True, context={'request': request}).data)
         except Exception as e:
@@ -68,6 +69,9 @@ class ProjectMatchView(APIView):
             # بنجيب أحدث 50 مشروع
             projects = FreelanceProject.objects.all().order_by('-posted_date')[:50]
             
+            existing_match_project_ids = MatchResult.objects.filter(user=user, project__isnull=False).values_list('project_id', flat=True)
+            projects_to_process = [p for p in projects if p.id not in existing_match_project_ids]
+
             def process_project(project):
                 try:
                     score, matched, tips = get_ai_match(profile_str, f"{project.title} {project.description}")
@@ -80,8 +84,9 @@ class ProjectMatchView(APIView):
                 finally:
                     connection.close()
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                list(executor.map(process_project, projects))
+            if projects_to_process:
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    list(executor.map(process_project, projects_to_process))
             
             matches = MatchResult.objects.filter(user=user, project__isnull=False).order_by('-match_score', '-project__posted_date')
             return Response(MatchResultSerializer(matches, many=True, context={'request': request}).data)

@@ -5,12 +5,12 @@ from opportunities.serializers import JobSerializer, ProjectSerializer
 
 class CVExperienceSerializer(serializers.ModelSerializer):
     # استخدام التسميات اللي اليوزر طلبها في الـ request والـ response
-    is_current = serializers.BooleanField(source='is_current', label="I currently work here")
-    job_title = serializers.CharField(source='job_title', label="Job Title")
-    company = serializers.CharField(source='company', label="Company")
-    start_date = serializers.CharField(source='start_date', label="Start Date")
-    end_date = serializers.CharField(source='end_date', required=False, allow_null=True, label="End Date")
-    description = serializers.CharField(source='description', required=False, allow_blank=True, label="Description")
+    is_current = serializers.BooleanField(label="I currently work here")
+    job_title = serializers.CharField(label="Job Title")
+    company = serializers.CharField(label="Company")
+    start_date = serializers.CharField(label="Start Date")
+    end_date = serializers.CharField(required=False, allow_null=True, label="End Date")
+    description = serializers.CharField(required=False, allow_blank=True, label="Description")
 
     class Meta:
         model = CVExperience
@@ -27,7 +27,7 @@ class CVExperienceSerializer(serializers.ModelSerializer):
         }
 
     def to_internal_value(self, data):
-        # تحويل المفاتيح العربية/المخصصة للمفاتيح الأصلية في الموديل
+        # تحويل المفاتيح المخصصة للمفاتيح الأصلية في الموديل
         mapped_data = {
             'is_current': data.get("I currently work here"),
             'job_title': data.get("Job Title"),
@@ -39,10 +39,10 @@ class CVExperienceSerializer(serializers.ModelSerializer):
         return super().to_internal_value(mapped_data)
 
 class CVEducationSerializer(serializers.ModelSerializer):
-    school = serializers.CharField(source='school', label="School / University")
-    degree = serializers.CharField(source='degree', label="Degree / Qualification")
-    graduation_year = serializers.CharField(source='graduation_year', label="Year of Graduation")
-    description = serializers.CharField(source='description', required=False, allow_blank=True, label="Additional Details")
+    school = serializers.CharField(label="School / University")
+    degree = serializers.CharField(label="Degree / Qualification")
+    graduation_year = serializers.CharField(label="Year of Graduation")
+    description = serializers.CharField(required=False, allow_blank=True, label="Additional Details")
 
     class Meta:
         model = CVEducation

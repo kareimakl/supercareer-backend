@@ -24,6 +24,8 @@ class BaseCVCreateView(generics.CreateAPIView):
         # Base CV is stored without linking to any job
         serializer.save(user=self.request.user, is_base=True, job=None)
 
+import requests
+
 class JobLinkedCVCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -34,25 +36,46 @@ class JobLinkedCVCreateView(APIView):
         if not base_cv:
             return Response({"error": "No base CV found for this user."}, status=400)
             
-        # Placeholder for external API call logic.
-        # This endpoint links the CV to a job and will take modified cv data from the AI API.
+        # Get base CV serialized data
+        base_cv_data = CVSerializer(base_cv).data
         
-        new_cv = CV.objects.create(
-            user=request.user,
-            job=job,
-            is_base=False,
-            full_name=base_cv.full_name,
-            phone_number=base_cv.phone_number,
-            professional_title=base_cv.professional_title,
-            email_address=base_cv.email_address,
-            location=base_cv.location,
-            portfolio_url=base_cv.portfolio_url,
-            professional_summary=base_cv.professional_summary,
-            content=base_cv.content
-        )
+        # We need to filter out read-only / system fields so the payload conforms strictly to CVSchema
+        # According to the AI API, CVSchema expects Personal Details, Experience, Education, Skills
+        cv_payload = {
+            "Personal Details": base_cv_data.get("Personal Details", {}),
+            "Experience": base_cv_data.get("Experience", []),
+            "Education": base_cv_data.get("Education", []),
+            "Skills": base_cv_data.get("Skills", [])
+        }
         
-        serializer = CVSerializer(new_cv)
-        return Response(serializer.data, status=201)
+        target_job_text = f"Title: {job.title}\nCompany: {job.company}\nDescription: {job.description}"
+        payload = {
+            "target_job": target_job_text,
+            "base_cv": cv_payload
+        }
+        
+        try:
+            # Call the AI API
+            api_url = "https://resume-analyzer-ni4g.onrender.com/API/CV/Build/Job_cv"
+            ai_response = requests.post(api_url, json=payload, timeout=60)
+            ai_response.raise_for_status()
+            
+            ai_data = ai_response.json()
+            optimized_cv_data = ai_data.get("optimized_cv")
+            
+            if not optimized_cv_data:
+                return Response({"error": "Invalid response from AI API: 'optimized_cv' missing"}, status=502)
+                
+            # Create the modified CV using our serializer
+            serializer = CVSerializer(data=optimized_cv_data)
+            if serializer.is_valid():
+                serializer.save(user=request.user, job=job, is_base=False)
+                return Response(serializer.data, status=201)
+            else:
+                return Response({"error": "AI response validation failed", "details": serializer.errors}, status=400)
+                
+        except requests.RequestException as e:
+            return Response({"error": "Failed to connect to AI API", "details": str(e)}, status=502)
 
 class ProposalHistoryView(generics.ListAPIView):
     serializer_class = ProposalSerializer

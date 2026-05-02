@@ -11,8 +11,8 @@ def get_ai_match(profile_text, target_text):
     }
     
     try:
-        # بنقلل الـ timeout لـ 3 ثواني عشان لو عبد الله قافل المشروع ميهنجش
-        response = requests.post(URL, json=payload, timeout=3)
+        # تقليل الـ timeout لـ 2 ثانية لضمان الاستجابة السريعة في Render
+        response = requests.post(URL, json=payload, timeout=2)
         if response.status_code == 200:
             data = response.json()
             return (
@@ -39,8 +39,8 @@ def generate_ai_proposal(profile_data, project_description):
     }
     
     try:
-        # بنكلم سيرفر عبدالله بمهلة 5 ثواني
-        response = requests.post(URL, json=payload, timeout=5)
+        # تقليل الـ timeout لـ 2 ثانية
+        response = requests.post(URL, json=payload, timeout=2)
         if response.status_code == 200:
             data = response.json()
             # بنرجع نص البروبوزال اللي عبدالله باعتة

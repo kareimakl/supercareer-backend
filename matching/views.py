@@ -15,10 +15,15 @@ class JobMatchView(APIView):
     def get(self, request):
         try:
             user = request.user
-            if not hasattr(user, 'profile'):
-                return Response({"error": "No profile found"}, status=400)
+            # تأكدنا من جلب الـ skills مسبقاً عشان ميعملش query جوا الـ threads
+            skills_list = []
+            if hasattr(user, 'profile'):
+                skills_list = [s.name for s in user.profile.skills.all()]
+            else:
+                return Response({"error": "Please complete your profile first (UserProfile missing)"}, status=400)
             
-            profile_str = f"Skills: {[s.name for s in user.profile.skills.all()]}. Bio: {user.profile.bio}"
+            profile_bio = getattr(user.profile, 'bio', '') or ''
+            profile_str = f"Skills: {', '.join(skills_list)}. Bio: {profile_bio}"
             
             # بنجيب أحدث 50 وظيفة
             jobs = Job.objects.all().order_by('-posted_date')[:50] 
@@ -61,10 +66,15 @@ class ProjectMatchView(APIView):
     def get(self, request):
         try:
             user = request.user
-            if not hasattr(user, 'profile'):
-                return Response({"error": "No profile found"}, status=400)
+            # تأكدنا من جلب الـ skills مسبقاً عشان ميعملش query جوا الـ threads
+            skills_list = []
+            if hasattr(user, 'profile'):
+                skills_list = [s.name for s in user.profile.skills.all()]
+            else:
+                return Response({"error": "Please complete your profile first (UserProfile missing)"}, status=400)
             
-            profile_str = f"Skills: {[s.name for s in user.profile.skills.all()]}. Bio: {user.profile.bio}"
+            profile_bio = getattr(user.profile, 'bio', '') or ''
+            profile_str = f"Skills: {', '.join(skills_list)}. Bio: {profile_bio}"
             
             # بنجيب أحدث 50 مشروع
             projects = FreelanceProject.objects.all().order_by('-posted_date')[:50]
@@ -115,12 +125,12 @@ class ProposalGeneratorView(APIView):
             return Response({"error": "Project not found"}, status=404)
             
         if not hasattr(user, 'profile'):
-            return Response({"error": "No profile found"}, status=400)
+            return Response({"error": "Please complete your profile first (UserProfile missing)"}, status=400)
             
         profile_data = {
             "skills": [s.name for s in user.profile.skills.all()],
-            "bio": user.profile.bio,
-            "full_name": user.profile.full_name
+            "bio": getattr(user.profile, 'bio', '') or '',
+            "full_name": getattr(user.profile, 'full_name', '') or ''
         }
         
         proposal_text = generate_ai_proposal(profile_data, project.description)

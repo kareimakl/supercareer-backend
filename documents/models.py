@@ -5,7 +5,7 @@ from opportunities.models import Job, FreelanceProject
 
 class CV(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, blank=True)
 
     # Personal Details
     full_name = models.CharField(max_length=255, blank=True, default='')

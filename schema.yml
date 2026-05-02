@@ -411,11 +411,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Logout'
           description: ''
-  /api/matching/:
-    get:
-      operationId: matching_list
+  /api/matching/generate-proposal/:
+    post:
+      operationId: matching_generate_proposal_create
       tags:
       - matching
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProposalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProposalRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -423,10 +435,31 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MatchResult'
+                type: object
+                properties:
+                  proposal:
+                    type: string
           description: ''
+  /api/matching/jobs/:
+    get:
+      operationId: matching_jobs_retrieve
+      tags:
+      - matching
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/matching/projects/:
+    get:
+      operationId: matching_projects_retrieve
+      tags:
+      - matching
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/notifications/:
     get:
       operationId: notifications_list
@@ -482,6 +515,7 @@ paths:
       - opportunities
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -498,6 +532,7 @@ paths:
       - opportunities
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -763,26 +798,104 @@ components:
         id:
           type: integer
           readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        job:
+          type: integer
+        full_name:
+          type: string
+          maxLength: 255
+        phone_number:
+          type: string
+          maxLength: 20
+        professional_title:
+          type: string
+          maxLength: 255
+        email_address:
+          type: string
+          format: email
+          maxLength: 254
+        location:
+          type: string
+          maxLength: 255
+        portfolio_url:
+          type: string
+          format: uri
+          maxLength: 500
+        professional_summary:
+          type: string
         content:
           type: string
         ats_score:
           type: number
           format: double
+          readOnly: true
+        is_base:
+          type: boolean
+        Experience:
+          type: array
+          items:
+            $ref: '#/components/schemas/CVExperience'
+        Education:
+          type: array
+          items:
+            $ref: '#/components/schemas/CVEducation'
+        Skills:
+          type: array
+          items:
+            type: string
         created_at:
           type: string
           format: date-time
           readOnly: true
-        user:
-          type: integer
-        job:
-          type: integer
       required:
       - ats_score
-      - content
       - created_at
       - id
       - job
       - user
+    CVEducation:
+      type: object
+      properties:
+        school:
+          type: string
+          title: School / University
+        degree:
+          type: string
+          title: Degree / Qualification
+        graduation_year:
+          type: string
+          title: Year of Graduation
+        description:
+          type: string
+          title: Additional Details
+      required:
+      - degree
+      - graduation_year
+      - school
+    CVExperience:
+      type: object
+      properties:
+        is_current:
+          type: boolean
+          title: I currently work here
+        job_title:
+          type: string
+        company:
+          type: string
+        start_date:
+          type: string
+        end_date:
+          type: string
+          nullable: true
+        description:
+          type: string
+      required:
+      - company
+      - is_current
+      - job_title
+      - start_date
     ChangePassword:
       type: object
       properties:
@@ -828,6 +941,28 @@ components:
       - matches_today
       - profile_views
       - user_name
+    Education:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        school:
+          type: string
+          maxLength: 255
+        degree:
+          type: string
+          maxLength: 255
+        graduation_year:
+          type: string
+          maxLength: 20
+        description:
+          type: string
+      required:
+      - degree
+      - graduation_year
+      - id
+      - school
     ForgotPassword:
       type: object
       properties:
@@ -855,6 +990,11 @@ components:
           readOnly: true
         match_score:
           type: integer
+          readOnly: true
+        required_skills:
+          type: array
+          items:
+            type: string
           readOnly: true
         title:
           type: string
@@ -888,6 +1028,7 @@ components:
       - location
       - match_score
       - posted_date
+      - required_skills
       - scraped_at
       - source_platform
       - source_url
@@ -899,46 +1040,6 @@ components:
           type: string
       required:
       - refresh
-    MatchResult:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        job:
-          type: integer
-          nullable: true
-        project:
-          type: integer
-          nullable: true
-        match_score:
-          type: number
-          format: double
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        job_details:
-          allOf:
-          - $ref: '#/components/schemas/Job'
-          readOnly: true
-        project_details:
-          allOf:
-          - $ref: '#/components/schemas/Project'
-          readOnly: true
-        matched_skills: {}
-        missing_skills: {}
-        ai_tips:
-          type: string
-      required:
-      - created_at
-      - id
-      - job_details
-      - match_score
-      - project_details
-      - user
     Message:
       type: object
       properties:
@@ -986,6 +1087,22 @@ components:
         username:
           type: string
           readOnly: true
+        full_name:
+          type: string
+          maxLength: 255
+        phone_number:
+          type: string
+          maxLength: 20
+        professional_title:
+          type: string
+          maxLength: 255
+        location:
+          type: string
+          maxLength: 255
+        portfolio_url:
+          type: string
+          format: uri
+          maxLength: 500
         bio:
           type: string
         specialization:
@@ -1005,6 +1122,17 @@ components:
           type: array
           items:
             type: string
+          writeOnly: true
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperience'
+          readOnly: true
+        education_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -1063,6 +1191,22 @@ components:
         username:
           type: string
           readOnly: true
+        full_name:
+          type: string
+          maxLength: 255
+        phone_number:
+          type: string
+          maxLength: 20
+        professional_title:
+          type: string
+          maxLength: 255
+        location:
+          type: string
+          maxLength: 255
+        portfolio_url:
+          type: string
+          format: uri
+          maxLength: 500
         bio:
           type: string
         specialization:
@@ -1082,6 +1226,17 @@ components:
           type: array
           items:
             type: string
+          writeOnly: true
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperience'
+          readOnly: true
+        education_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -1092,6 +1247,8 @@ components:
           readOnly: true
       required:
       - created_at
+      - education_history
+      - experiences
       - id
       - updated_at
       - user
@@ -1193,6 +1350,14 @@ components:
       - job_details
       - project_details
       - user
+    ProposalRequest:
+      type: object
+      properties:
+        project_id:
+          type: integer
+          description: رقم الـ ID الخاص بالمشروع
+      required:
+      - project_id
     RefreshResponse:
       type: object
       properties:
@@ -1222,6 +1387,23 @@ components:
         full_name:
           type: string
           writeOnly: true
+          default: ''
+        phone_number:
+          type: string
+          writeOnly: true
+          default: ''
+        professional_title:
+          type: string
+          writeOnly: true
+          default: ''
+        location:
+          type: string
+          writeOnly: true
+          default: ''
+        portfolio_url:
+          type: string
+          writeOnly: true
+          default: ''
         skills:
           type: array
           items:
@@ -1359,6 +1541,34 @@ components:
       required:
       - email
       - otp
+    WorkExperience:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job_title:
+          type: string
+          maxLength: 255
+        company:
+          type: string
+          maxLength: 255
+        start_date:
+          type: string
+          maxLength: 100
+        end_date:
+          type: string
+          nullable: true
+          maxLength: 100
+        is_current:
+          type: boolean
+        description:
+          type: string
+      required:
+      - company
+      - id
+      - job_title
+      - start_date
   securitySchemes:
     jwtAuth:
       type: http

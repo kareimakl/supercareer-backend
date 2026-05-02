@@ -43,6 +43,7 @@ class CVSerializer(serializers.ModelSerializer):
             'email_address', 'location', 'portfolio_url', 'professional_summary', 
             'content', 'ats_score', 'skills', 'experiences', 'education_history', 'created_at'
         ]
+        read_only_fields = ['user', 'created_at', 'ats_score']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

@@ -19,6 +19,8 @@ class CV(models.Model):
     # Legacy field
     content = models.TextField(blank=True, default='')
     ats_score = models.FloatField(default=0.0)
+    
+    is_base = models.BooleanField(default=False)
 
     skills = models.ManyToManyField('accounts.Skill', blank=True, related_name='cvs')
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,11 +1,16 @@
 from rest_framework import generics
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from opportunities.models import Job
-from .models import CV, Proposal
-from .serializers import CVSerializer, ProposalSerializer
+from .models import CV, Proposal, ProfileCVBuild
+from .serializers import CVSerializer, ProposalSerializer, ProfileCVBuildSerializer
+from drf_spectacular.utils import extend_schema
+
+import json
+import requests
 
 class CVListView(generics.ListAPIView):
     serializer_class = CVSerializer
@@ -23,8 +28,6 @@ class BaseCVCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         # Base CV is stored without linking to any job
         serializer.save(user=self.request.user, is_base=True, job=None)
-
-import requests
 
 class JobLinkedCVCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -59,10 +62,10 @@ class JobLinkedCVCreateView(APIView):
             api_url = "https://resume-analyzer-ni4g.onrender.com/API/CV/Build/Job_cv"
             ai_response = requests.post(api_url, json=payload, timeout=60)
             ai_response.raise_for_status()
-            
+
             ai_data = ai_response.json()
             optimized_cv_data = ai_data.get("optimized_cv")
-            
+
             if not optimized_cv_data:
                 return Response({"error": "Invalid response from AI API: 'optimized_cv' missing"}, status=502)
                 
@@ -76,6 +79,44 @@ class JobLinkedCVCreateView(APIView):
                 
         except requests.RequestException as e:
             return Response({"error": "Failed to connect to AI API", "details": str(e)}, status=502)
+
+class ProfileCVBuildView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProfileCVBuildSerializer
+
+    @extend_schema(request=ProfileCVBuildSerializer)
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        payload = serializer.validated_data['user_data']
+
+        # Convert payload to the format expected by external API
+        external_payload = {"user_data": payload}
+
+        try:
+            api_url = "https://resume-analyzer-ni4g.onrender.com/API/CV/Build/Profile_cv"
+            external_response = requests.post(api_url, json=external_payload, timeout=60)
+            external_response.raise_for_status()
+            response_data = external_response.json()
+        except requests.RequestException as e:
+            return Response({"error": "Failed to connect to external CV API", "details": str(e)}, status=502)
+        except ValueError:
+            return Response({"error": "Invalid JSON returned from external CV API."}, status=502)
+
+        profile_build = ProfileCVBuild.objects.create(
+            user=request.user,
+            request_payload=external_payload,
+            response_payload=response_data,
+        )
+
+        return Response({
+            "id": profile_build.id,
+            "request_payload": profile_build.request_payload,
+            "response_payload": profile_build.response_payload,
+        }, status=201)
+
 
 class ProposalHistoryView(generics.ListAPIView):
     serializer_class = ProposalSerializer

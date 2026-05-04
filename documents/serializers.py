@@ -148,6 +148,14 @@ class CVSerializer(serializers.ModelSerializer):
             
         return cv
 
+class ProfileCVBuildSerializer(serializers.Serializer):
+    user_data = serializers.CharField(
+        help_text="Profile data text to send to the external CV profile API"
+    )
+
+    class Meta:
+        fields = ['user_data']
+
 class ProposalSerializer(serializers.ModelSerializer):
     job_details = JobSerializer(source='job', read_only=True)
     project_details = ProjectSerializer(source='project', read_only=True)

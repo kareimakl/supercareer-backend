@@ -51,6 +51,16 @@ class CVEducation(models.Model):
         return f"{self.degree} from {self.school}"
 
 
+class ProfileCVBuild(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    request_payload = models.JSONField(blank=True, null=True)
+    response_payload = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Profile CV build for {self.user.username} at {self.created_at.isoformat()}"
+
+
 class Proposal(models.Model):
     STATUS_CHOICES = (
         ('sent', 'Sent'),
@@ -66,4 +76,3 @@ class Proposal(models.Model):
 
     def __str__(self):
         return f"{self.user.username} Proposal"
-        

@@ -12,13 +12,19 @@ from drf_spectacular.utils import extend_schema
 import json
 import requests
 
-class CVListView(generics.ListAPIView):
+class CVListView(generics.ListCreateAPIView):
+    """List all CVs for the user, or create a new regular (non-base) CV."""
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
+
+    def perform_create(self, serializer):
+        # Create a regular CV (is_base=False) linked to the user
+        # Note: 'job' can be passed in validated_data if allowed by serializer, otherwise it will be None
+        serializer.save(user=self.request.user, is_base=False)
 
 class CVDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update or delete a specific CV by ID. Only allows access to the user's own CVs."""

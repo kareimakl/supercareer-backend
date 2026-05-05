@@ -3,13 +3,23 @@ from .models import CV, Proposal, CVExperience, CVEducation
 from accounts.models import Skill
 from opportunities.serializers import JobSerializer, ProjectSerializer
 
+# Custom field that creates Skill objects if they don't exist
+class AutoCreateSkillSlugField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        try:
+            return super().to_internal_value(data)
+        except serializers.ValidationError:
+            # Create the skill if it does not exist
+            skill, _ = Skill.objects.get_or_create(name=data)
+            return skill
+
 class CVExperienceSerializer(serializers.ModelSerializer):
     # استخدام التسميات اللي اليوزر طلبها في الـ request والـ response
     is_current = serializers.BooleanField(label="I currently work here")
     job_title = serializers.CharField(label="Job Title")
     company = serializers.CharField(label="Company")
     start_date = serializers.CharField(label="Start Date")
-    end_date = serializers.CharField(required=False, allow_null=True, label="End Date")
+    end_date = serializers.CharField(required=False, allow_null=True, allow_blank=True, label="End Date")
     description = serializers.CharField(required=False, allow_blank=True, label="Description")
 
     class Meta:
@@ -69,7 +79,7 @@ class CVSerializer(serializers.ModelSerializer):
     # بنغير التسميات للي اليوزر طلبها وبنخليها قابلة للكتابة (Writable Nested)
     Experience = CVExperienceSerializer(many=True, source='experiences', required=False)
     Education = CVEducationSerializer(many=True, source='education_history', required=False)
-    Skills = serializers.SlugRelatedField(many=True, source='skills', slug_field='name', queryset=Skill.objects.all(), required=False)
+    Skills = AutoCreateSkillSlugField(many=True, source='skills', slug_field='name', queryset=Skill.objects.all(), required=False)
     
     class Meta:
         model = CV

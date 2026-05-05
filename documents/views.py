@@ -25,9 +25,28 @@ class BaseCVCreateView(generics.CreateAPIView):
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        # Prevent creating more than one base CV per user
+        if CV.objects.filter(user=request.user, is_base=True).exists():
+            return Response({"error": "Base CV already exists for this user. Use the update endpoint to modify it."}, status=400)
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         # Base CV is stored without linking to any job
         serializer.save(user=self.request.user, is_base=True, job=None)
+
+
+class BaseCVUpdateView(generics.RetrieveUpdateAPIView):
+    """Allow the user to retrieve and update their existing base CV."""
+    serializer_class = CVSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Return the single base CV for the authenticated user or 404
+        return get_object_or_404(CV, user=self.request.user, is_base=True)
+
+    def get_queryset(self):
+        return CV.objects.filter(user=self.request.user, is_base=True)
 
 class JobLinkedCVCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -90,21 +109,25 @@ class ProfileCVBuildView(GenericAPIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
-        payload = serializer.validated_data['user_data']
-
-        # Convert payload to the format expected by external API
-        external_payload = {"user_data": payload}
-
         try:
+            payload = serializer.validated_data['user_data']
+
+            # Convert payload to the format expected by external API
+            external_payload = {"user_data": payload}
+
             api_url = "https://resume-analyzer-ni4g.onrender.com/API/CV/Build/Profile_cv"
             external_response = requests.post(api_url, json=external_payload, timeout=60)
             external_response.raise_for_status()
             response_data = external_response.json()
         except requests.RequestException as e:
             return Response({"error": "Failed to connect to external CV API", "details": str(e)}, status=502)
-        except ValueError:
-            return Response({"error": "Invalid JSON returned from external CV API."}, status=502)
+        except Exception as e:
+            # Log unexpected errors and return a generic 500 response
+            import traceback, logging
+            logging.error("Unexpected error in ProfileCVBuildView: %s", traceback.format_exc())
+            return Response({"error": "Internal server error", "details": str(e)}, status=500)
 
+        # Save the build request/response
         profile_build = ProfileCVBuild.objects.create(
             user=request.user,
             request_payload=external_payload,

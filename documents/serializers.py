@@ -158,6 +158,34 @@ class CVSerializer(serializers.ModelSerializer):
             
         return cv
 
+    def update(self, instance, validated_data):
+        experiences_data = validated_data.pop('experiences', None)
+        education_data = validated_data.pop('education_history', None)
+        skills_data = validated_data.pop('skills', None)
+        
+        # Update CV flat fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Replace experiences if provided in the payload
+        if experiences_data is not None:
+            instance.experiences.all().delete()
+            for exp in experiences_data:
+                CVExperience.objects.create(cv=instance, **exp)
+                
+        # Replace education if provided in the payload
+        if education_data is not None:
+            instance.education_history.all().delete()
+            for edu in education_data:
+                CVEducation.objects.create(cv=instance, **edu)
+                
+        # Replace skills if provided in the payload
+        if skills_data is not None:
+            instance.skills.set(skills_data)
+            
+        return instance
+
 class ProfileCVBuildSerializer(serializers.Serializer):
     user_data = serializers.CharField(
         help_text="Profile data text to send to the external CV profile API"

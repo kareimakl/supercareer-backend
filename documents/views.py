@@ -7,10 +7,48 @@ from django.shortcuts import get_object_or_404
 from opportunities.models import Job
 from .models import CV, Proposal, ProfileCVBuild
 from .serializers import CVSerializer, ProposalSerializer, ProfileCVBuildSerializer
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiExample
 
 import json
 import requests
+
+CV_EXAMPLE = OpenApiExample(
+    "Custom CV Schema",
+    description="The expected JSON structure with custom labels.",
+    value={
+        "Personal Details": {
+            "Full Name": "string",
+            "Phone Number": "string",
+            "Professional Title": "string",
+            "Email Address": "user@example.com",
+            "Location": "string",
+            "Portfolio / LinkedIn URL": "https://example.com",
+            "Professional Summary": "string"
+        },
+        "Experience": [
+            {
+                "I currently work here": True,
+                "Job Title": "string",
+                "Company": "string",
+                "Start Date": "string",
+                "End Date": "string",
+                "Description": "string"
+            }
+        ],
+        "Education": [
+            {
+                "School / University": "string",
+                "Degree / Qualification": "string",
+                "Year of Graduation": "string",
+                "Additional Details": "string"
+            }
+        ],
+        "Skills": [
+            "string"
+        ]
+    },
+    request_only=True,
+)
 
 class CVListView(generics.ListCreateAPIView):
     """List all CVs for the user, or create a new regular (non-base) CV."""
@@ -20,6 +58,10 @@ class CVListView(generics.ListCreateAPIView):
     def get_queryset(self):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
+
+    @extend_schema(examples=[CV_EXAMPLE])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         # Create a regular CV (is_base=False) linked to the user
@@ -35,10 +77,22 @@ class CVDetailView(generics.RetrieveUpdateDestroyAPIView):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
 
+    @extend_schema(examples=[CV_EXAMPLE])
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @extend_schema(examples=[CV_EXAMPLE])
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
 class BaseCVCreateView(generics.CreateAPIView):
     queryset = CV.objects.all()
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(examples=[CV_EXAMPLE])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         # Prevent creating more than one base CV per user
@@ -55,6 +109,14 @@ class BaseCVUpdateView(generics.RetrieveUpdateAPIView):
     """Allow the user to retrieve and update their existing base CV."""
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(examples=[CV_EXAMPLE])
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @extend_schema(examples=[CV_EXAMPLE])
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
 
     def get_object(self):
         # Return the single base CV for the authenticated user or 404

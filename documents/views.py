@@ -77,11 +77,11 @@ class CVDetailView(generics.RetrieveUpdateDestroyAPIView):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
 
-    @extend_schema(examples=[CV_EXAMPLE])
+    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
 
-    @extend_schema(examples=[CV_EXAMPLE])
+    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
 
@@ -110,11 +110,11 @@ class BaseCVUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(examples=[CV_EXAMPLE])
+    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
 
-    @extend_schema(examples=[CV_EXAMPLE])
+    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
 

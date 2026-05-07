@@ -46,8 +46,8 @@ CV_EXAMPLE = OpenApiExample(
         "Skills": [
             "string"
         ]
-    },
-    request_only=True,
+    }
+    # Removed request_only=True so the example is shown for responses as well
 )
 
 class CVListView(generics.ListCreateAPIView):
@@ -59,7 +59,7 @@ class CVListView(generics.ListCreateAPIView):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
 
-    @extend_schema(examples=[CV_EXAMPLE])
+    @extend_schema(request=CVSerializer, responses={201: CVSerializer}, examples=[CV_EXAMPLE])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
@@ -90,7 +90,7 @@ class BaseCVCreateView(generics.CreateAPIView):
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(examples=[CV_EXAMPLE])
+    @extend_schema(request=CVSerializer, responses={201: CVSerializer}, examples=[CV_EXAMPLE])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 

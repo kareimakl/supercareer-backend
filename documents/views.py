@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404
 from opportunities.models import Job
 from .models import CV, Proposal, ProfileCVBuild
 from .serializers import CVSerializer, ProposalSerializer, ProfileCVBuildSerializer
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiExample, inline_serializer
+from rest_framework import serializers
 
 import json
 import requests
@@ -50,6 +51,47 @@ CV_EXAMPLE = OpenApiExample(
     # Removed request_only=True so the example is shown for responses as well
 )
 
+CV_SCHEMA_SERIALIZER = inline_serializer(
+    name='CustomCVSchema',
+    fields={
+        'Personal Details': inline_serializer(
+            name='PersonalDetails',
+            fields={
+                'Full Name': serializers.CharField(),
+                'Phone Number': serializers.CharField(),
+                'Professional Title': serializers.CharField(),
+                'Email Address': serializers.EmailField(),
+                'Location': serializers.CharField(),
+                'Portfolio / LinkedIn URL': serializers.URLField(),
+                'Professional Summary': serializers.CharField(),
+            }
+        ),
+        'Experience': inline_serializer(
+            name='ExperienceItem',
+            many=True,
+            fields={
+                'I currently work here': serializers.BooleanField(),
+                'Job Title': serializers.CharField(),
+                'Company': serializers.CharField(),
+                'Start Date': serializers.CharField(),
+                'End Date': serializers.CharField(),
+                'Description': serializers.CharField(),
+            }
+        ),
+        'Education': inline_serializer(
+            name='EducationItem',
+            many=True,
+            fields={
+                'School / University': serializers.CharField(),
+                'Degree / Qualification': serializers.CharField(),
+                'Year of Graduation': serializers.CharField(),
+                'Additional Details': serializers.CharField(),
+            }
+        ),
+        'Skills': serializers.ListField(child=serializers.CharField())
+    }
+)
+
 class CVListView(generics.ListCreateAPIView):
     """List all CVs for the user, or create a new regular (non-base) CV."""
     serializer_class = CVSerializer
@@ -59,7 +101,7 @@ class CVListView(generics.ListCreateAPIView):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
 
-    @extend_schema(request=CVSerializer, responses={201: CVSerializer}, examples=[CV_EXAMPLE])
+    @extend_schema(request=CV_SCHEMA_SERIALIZER, responses={201: CV_SCHEMA_SERIALIZER}, examples=[CV_EXAMPLE])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
@@ -77,11 +119,11 @@ class CVDetailView(generics.RetrieveUpdateDestroyAPIView):
         return CV.objects.filter(user=self.request.user)\
             .prefetch_related('experiences', 'education_history', 'skills')
 
-    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
+    @extend_schema(request=CV_SCHEMA_SERIALIZER, responses={200: CV_SCHEMA_SERIALIZER}, examples=[CV_EXAMPLE])
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
 
-    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
+    @extend_schema(request=CV_SCHEMA_SERIALIZER, responses={200: CV_SCHEMA_SERIALIZER}, examples=[CV_EXAMPLE])
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
 
@@ -90,7 +132,7 @@ class BaseCVCreateView(generics.CreateAPIView):
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=CVSerializer, responses={201: CVSerializer}, examples=[CV_EXAMPLE])
+    @extend_schema(request=CV_SCHEMA_SERIALIZER, responses={201: CV_SCHEMA_SERIALIZER}, examples=[CV_EXAMPLE])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
@@ -110,11 +152,11 @@ class BaseCVUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = CVSerializer
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
+    @extend_schema(request=CV_SCHEMA_SERIALIZER, responses={200: CV_SCHEMA_SERIALIZER}, examples=[CV_EXAMPLE])
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
 
-    @extend_schema(request=CVSerializer, responses={200: CVSerializer}, examples=[CV_EXAMPLE])
+    @extend_schema(request=CV_SCHEMA_SERIALIZER, responses={200: CV_SCHEMA_SERIALIZER}, examples=[CV_EXAMPLE])
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
 

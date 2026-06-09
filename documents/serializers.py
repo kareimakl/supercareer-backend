@@ -114,26 +114,35 @@ class CVSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         # تحويل الـ Request المتداخل لـ Flat fields عشان الموديل يفهمها
-        personal = data.get("Personal Details", data)
-        
-        # بننقل البيانات من الـ Nested Dictionary للـ Flat Map
-        new_data = data.copy()
-        new_data['full_name'] = personal.get("Full Name", personal.get("full_name", ""))
-        new_data['phone_number'] = personal.get("Phone Number", personal.get("phone_number", ""))
-        new_data['professional_title'] = personal.get("Professional Title", personal.get("professional_title", ""))
-        new_data['email_address'] = personal.get("Email Address", personal.get("email_address", ""))
-        new_data['location'] = personal.get("Location", personal.get("location", ""))
-        new_data['portfolio_url'] = personal.get("Portfolio / LinkedIn URL", personal.get("portfolio_url", ""))
-        new_data['professional_summary'] = personal.get("Professional Summary", personal.get("professional_summary", ""))
-        
-        # بنظبط الـ Experience و الـ Education لو موجودين
+        # Only map fields that are actually present in the payload (fixes PATCH data-loss bug)
+        personal = data.get("Personal Details", {})
+        new_data = {k: v for k, v in data.items() if k != "Personal Details"}
+
+        field_map = {
+            "Full Name": "full_name",
+            "Phone Number": "phone_number",
+            "Professional Title": "professional_title",
+            "Email Address": "email_address",
+            "Location": "location",
+            "Portfolio / LinkedIn URL": "portfolio_url",
+            "Professional Summary": "professional_summary",
+        }
+
+        # Copy each Personal Details sub-field only if it was provided
+        for display_key, model_key in field_map.items():
+            if display_key in personal:
+                new_data[model_key] = personal[display_key]
+            elif model_key in personal:
+                new_data[model_key] = personal[model_key]
+
+        # Map nested lists only if they were provided in the payload
         if "Experience" in data:
-            new_data['experiences'] = data.get("Experience")
+            new_data['experiences'] = data["Experience"]
         if "Education" in data:
-            new_data['education_history'] = data.get("Education")
+            new_data['education_history'] = data["Education"]
         if "Skills" in data:
-            new_data['skills'] = data.get("Skills")
-            
+            new_data['skills'] = data["Skills"]
+
         return super().to_internal_value(new_data)
 
     def create(self, validated_data):

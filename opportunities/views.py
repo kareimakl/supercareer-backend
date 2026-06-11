@@ -1,3 +1,5 @@
+from django.db.models import Prefetch
+from matching.models import MatchResult
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Job, FreelanceProject
@@ -11,14 +13,38 @@ from rest_framework import status
 from accounts.models import Skill
 
 class JobListView(generics.ListAPIView):
-    queryset = Job.objects.prefetch_related('required_skills').all().order_by('-id')
     serializer_class = JobSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user and user.is_authenticated:
+            return Job.objects.prefetch_related(
+                'required_skills',
+                Prefetch(
+                    'matchresult_set',
+                    queryset=MatchResult.objects.filter(user=user),
+                    to_attr='user_matches'
+                )
+            ).all().order_by('-id')
+        return Job.objects.prefetch_related('required_skills').all().order_by('-id')
+
 class ProjectListView(generics.ListAPIView):
-    queryset = FreelanceProject.objects.prefetch_related('required_skills').all().order_by('-id')
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user and user.is_authenticated:
+            return FreelanceProject.objects.prefetch_related(
+                'required_skills',
+                Prefetch(
+                    'matchresult_set',
+                    queryset=MatchResult.objects.filter(user=user),
+                    to_attr='user_matches'
+                )
+            ).all().order_by('-id')
+        return FreelanceProject.objects.prefetch_related('required_skills').all().order_by('-id')
 
 
 

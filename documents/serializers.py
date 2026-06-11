@@ -113,35 +113,69 @@ class CVSerializer(serializers.ModelSerializer):
         }
 
     def to_internal_value(self, data):
-        # تحويل الـ Request المتداخل لـ Flat fields عشان الموديل يفهمها
-        # Only map fields that are actually present in the payload (fixes PATCH data-loss bug)
-        personal = data.get("Personal Details", {})
-        new_data = {k: v for k, v in data.items() if k != "Personal Details"}
+        # Support case-insensitive keys for Personal Details
+        personal = None
+        for key in ["Personal Details", "personal_details", "personalDetails"]:
+            if key in data:
+                personal = data[key]
+                break
+        
+        # We start by copying all keys from data except the personal details keys.
+        new_data = {k: v for k, v in data.items() if k not in ["Personal Details", "personal_details", "personalDetails"]}
 
         field_map = {
             "Full Name": "full_name",
+            "full_name": "full_name",
+            "fullName": "full_name",
+            
             "Phone Number": "phone_number",
+            "phone_number": "phone_number",
+            "phoneNumber": "phone_number",
+            
             "Professional Title": "professional_title",
+            "professional_title": "professional_title",
+            "professionalTitle": "professional_title",
+            
             "Email Address": "email_address",
+            "email_address": "email_address",
+            "emailAddress": "email_address",
+            
             "Location": "location",
+            "location": "location",
+            
             "Portfolio / LinkedIn URL": "portfolio_url",
+            "portfolio_url": "portfolio_url",
+            "portfolioUrl": "portfolio_url",
+            
             "Professional Summary": "professional_summary",
+            "professional_summary": "professional_summary",
+            "professionalSummary": "professional_summary",
         }
 
-        # Copy each Personal Details sub-field only if it was provided
-        for display_key, model_key in field_map.items():
-            if display_key in personal:
-                new_data[model_key] = personal[display_key]
-            elif model_key in personal:
-                new_data[model_key] = personal[model_key]
+        if personal is not None:
+            # If personal details was provided, copy its fields
+            for display_key, model_key in field_map.items():
+                if display_key in personal:
+                    new_data[model_key] = personal[display_key]
 
-        # Map nested lists only if they were provided in the payload
-        if "Experience" in data:
-            new_data['experiences'] = data["Experience"]
-        if "Education" in data:
-            new_data['education_history'] = data["Education"]
-        if "Skills" in data:
-            new_data['skills'] = data["Skills"]
+        # Map nested lists in any of the common key formats to the serializer field names
+        experience_keys = ["Experience", "experience", "experiences"]
+        for k in experience_keys:
+            if k in data:
+                new_data['Experience'] = data[k]
+                break
+
+        education_keys = ["Education", "education", "education_history", "educationHistory"]
+        for k in education_keys:
+            if k in data:
+                new_data['Education'] = data[k]
+                break
+
+        skills_keys = ["Skills", "skills"]
+        for k in skills_keys:
+            if k in data:
+                new_data['Skills'] = data[k]
+                break
 
         return super().to_internal_value(new_data)
 

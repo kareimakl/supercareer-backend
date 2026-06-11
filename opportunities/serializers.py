@@ -12,8 +12,19 @@ class JobSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.IntegerField)
     def get_match_score(self, obj):
-        # Placeholder for AI match score logic
-        return 85
+        if hasattr(obj, 'user_matches'):
+            matches = obj.user_matches
+            if matches:
+                return int(matches[0].match_score)
+            return 0
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            from matching.models import MatchResult
+            match = MatchResult.objects.filter(user=request.user, job=obj).first()
+            if match:
+                return int(match.match_score)
+        return 0
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     match_score = serializers.SerializerMethodField()
@@ -29,8 +40,19 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.IntegerField)
     def get_match_score(self, obj):
-        # Placeholder for AI match score logic
-        return 90
+        if hasattr(obj, 'user_matches'):
+            matches = obj.user_matches
+            if matches:
+                return int(matches[0].match_score)
+            return 0
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            from matching.models import MatchResult
+            match = MatchResult.objects.filter(user=request.user, project=obj).first()
+            if match:
+                return int(match.match_score)
+        return 0
+
 
 class RefreshResponseSerializer(serializers.Serializer):
     message = serializers.CharField()

@@ -31,20 +31,28 @@ def get_ai_match(profile_text, target_text):
 
 def generate_ai_proposal(profile_data, project_description):
     # رابط سيرفر عبد الله الخاص بالبروبوزال (كما في الصورة)
-    URL = "https://unimpartible-glaringly-maudie.ngrok-free.dev/API/proposel"
+    URL = "http://76.13.55.54:8080/API/proposel"
     
+    # تحويل البيانات لنص لأن السيرفر يتوقع string في user_profile
+    if isinstance(profile_data, dict):
+        profile_str = f"Name: {profile_data.get('full_name', '')}. Bio: {profile_data.get('bio', '')}. Skills: {', '.join(profile_data.get('skills', []))}"
+    else:
+        profile_str = str(profile_data)
+        
     payload = {
-        "profile": profile_data,
-        "project": project_description
+        "user_profile": profile_str,
+        "project_details": project_description
     }
     
     try:
-        # تقليل الـ timeout لـ 2 ثانية
-        response = requests.post(URL, json=payload, timeout=2)
+        # زيادة الـ timeout لأن الـ AI قد يستغرق بعض الوقت للتوليد (مثلاً 30 ثانية)
+        response = requests.post(URL, json=payload, timeout=30)
         if response.status_code == 200:
             data = response.json()
-            # بنرجع نص البروبوزال اللي عبدالله باعتة
-            return data.get('generated_proposal', "")
+            # السيرفر يرجع النص في مفتاح proposal_text
+            proposal_text = data.get('proposal_text')
+            if proposal_text:
+                return proposal_text
     except Exception:
         pass
     
